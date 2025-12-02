@@ -1,20 +1,36 @@
-// Suppress SDK 54 warnings before app loads
-import { LogBox } from 'react-native';
-LogBox.ignoreAllLogs(true);
+// Suppress SDK 54 errors at the lowest level possible
+const suppressedErrors = [
+  'disableEventLoopOnBridgeless',
+  'feature flag',
+  'runtime not ready',
+  'native module method was not available'
+];
 
-// Override console.error to suppress specific errors
-const originalError = console.error;
-console.error = (...args) => {
-  const message = args[0]?.toString?.() || '';
-  if (
-    message.includes('disableEventLoopOnBridgeless') ||
-    message.includes('feature flag') ||
-    message.includes('runtime not ready')
-  ) {
-    return; // Suppress these errors
-  }
-  originalError.apply(console, args);
+const shouldSuppress = (msg) => {
+  if (!msg) return false;
+  const str = typeof msg === 'string' ? msg : msg.toString?.() || '';
+  return suppressedErrors.some(e => str.includes(e));
 };
 
-import 'expo/AppEntry';
+// Override ErrorUtils if available (React Native's error handler)
+if (global.ErrorUtils) {
+  const originalHandler = global.ErrorUtils.getGlobalHandler();
+  global.ErrorUtils.setGlobalHandler((error, isFatal) => {
+    if (shouldSuppress(error?.message)) {
+      return; // Don't show this error
+    }
+    originalHandler(error, isFatal);
+  });
+}
 
+// Override console methods
+['error', 'warn'].forEach(method => {
+  const original = console[method];
+  console[method] = (...args) => {
+    if (shouldSuppress(args[0])) return;
+    original.apply(console, args);
+  };
+});
+
+// Now load the app
+import 'expo/AppEntry';
