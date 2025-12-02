@@ -11,29 +11,12 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import PersonalScreen from './src/screens/PersonalScreen';
 import { COLORS } from './src/constants/theme';
 
+// Suppress SDK 54 new architecture warnings BEFORE anything else
+LogBox.ignoreAllLogs(true);
+
 // Enable RTL layout
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
-
-// Ignore specific warnings and errors related to new architecture
-LogBox.ignoreLogs([
-  'Warning: ...',
-  'Could not access feature flag',
-  'disableEventLoopOnBridgeless',
-  '[runtime not ready]',
-  'native module method was not available',
-  'VirtualizedLists should never be nested',
-]);
-
-// Also ignore console.error for this specific error
-const originalConsoleError = console.error;
-console.error = (...args) => {
-  if (args[0]?.includes?.('disableEventLoopOnBridgeless') || 
-      args[0]?.includes?.('feature flag')) {
-    return;
-  }
-  originalConsoleError.apply(console, args);
-};
 
 const Tab = createBottomTabNavigator();
 
