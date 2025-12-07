@@ -1,5 +1,5 @@
 import React from 'react';
-import { I18nManager, LogBox, View, Text, StyleSheet } from 'react-native';
+import { I18nManager, LogBox, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -20,23 +20,6 @@ I18nManager.forceRTL(true);
 
 const Tab = createBottomTabNavigator();
 
-interface TabIconProps {
-  focused: boolean;
-}
-
-const TabIcon = ({ focused, iconName, label }: TabIconProps & { iconName: string; label: string }) => (
-  <View style={[styles.tabItem, focused && styles.tabItemFocused]}>
-    <Ionicons 
-      name={iconName as any} 
-      size={22} 
-      color={focused ? COLORS.white : COLORS.gray} 
-    />
-    <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>
-      {label}
-    </Text>
-  </View>
-);
-
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -46,7 +29,9 @@ export default function App() {
             <Tab.Navigator
               screenOptions={{
                 tabBarStyle: styles.tabBar,
-                tabBarShowLabel: false,
+                tabBarActiveTintColor: COLORS.primary,
+                tabBarInactiveTintColor: COLORS.gray,
+                tabBarLabelStyle: styles.tabLabel,
                 headerShown: false,
               }}
             >
@@ -54,11 +39,12 @@ export default function App() {
                 name="Home" 
                 component={HomeScreen} 
                 options={{
-                  tabBarIcon: ({ focused }: TabIconProps) => (
-                    <TabIcon 
-                      focused={focused}
-                      iconName={focused ? 'checkbox' : 'checkbox-outline'}
-                      label="משימות"
+                  tabBarLabel: 'משימות',
+                  tabBarIcon: ({ focused, color }) => (
+                    <Ionicons 
+                      name={focused ? 'checkbox' : 'checkbox-outline'} 
+                      size={24} 
+                      color={color} 
                     />
                   ),
                 }}
@@ -67,11 +53,12 @@ export default function App() {
                 name="Calendar" 
                 component={CalendarScreen}
                 options={{
-                  tabBarIcon: ({ focused }: TabIconProps) => (
-                    <TabIcon 
-                      focused={focused}
-                      iconName={focused ? 'calendar' : 'calendar-outline'}
-                      label="לוח שנה"
+                  tabBarLabel: 'לוח שנה',
+                  tabBarIcon: ({ focused, color }) => (
+                    <Ionicons 
+                      name={focused ? 'calendar' : 'calendar-outline'} 
+                      size={24} 
+                      color={color} 
                     />
                   ),
                 }}
@@ -80,11 +67,12 @@ export default function App() {
                 name="Personal" 
                 component={PersonalScreen}
                 options={{
-                  tabBarIcon: ({ focused }: TabIconProps) => (
-                    <TabIcon 
-                      focused={focused}
-                      iconName={focused ? 'person' : 'person-outline'}
-                      label="אישי"
+                  tabBarLabel: 'אישי',
+                  tabBarIcon: ({ focused, color }) => (
+                    <Ionicons 
+                      name={focused ? 'person' : 'person-outline'} 
+                      size={24} 
+                      color={color} 
                     />
                   ),
                 }}
@@ -103,31 +91,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
-    height: 110,
-    paddingBottom: 30,
-    paddingTop: 10,
-    paddingHorizontal: 20,
-  },
-  tabItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 16,
-    minWidth: 85,
-    gap: 4,
-  },
-  tabItemFocused: {
-    backgroundColor: COLORS.primary,
   },
   tabLabel: {
-    fontSize: 12,
-    color: COLORS.gray,
-    marginTop: 2,
-    fontWeight: '400',
-  },
-  tabLabelFocused: {
-    color: COLORS.white,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
