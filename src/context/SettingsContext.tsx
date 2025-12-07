@@ -8,17 +8,28 @@ export interface CustomTag {
   bgColor: string;
 }
 
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  password?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SettingsContextType {
   customTags: CustomTag[];
-  personalNotes: string;
+  notes: Note[];
   addTag: (tag: Omit<CustomTag, 'id'>) => void;
   updateTag: (id: string, tag: Partial<CustomTag>) => void;
   deleteTag: (id: string) => void;
-  setPersonalNotes: (notes: string) => void;
+  addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateNote: (id: string, note: Partial<Note>) => void;
+  deleteNote: (id: string) => void;
 }
 
 const TAGS_KEY = '@custom_tags';
-const NOTES_KEY = '@personal_notes';
+const NOTES_KEY = '@user_notes';
 
 const defaultTags: CustomTag[] = [
   { id: '1', label: 'אישי', color: '#B8860B', bgColor: '#FFF8DC' },
@@ -35,7 +46,7 @@ const generateId = () => Date.now().toString(36) + Math.random().toString(36).su
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [customTags, setCustomTags] = useState<CustomTag[]>(defaultTags);
-  const [personalNotes, setPersonalNotesState] = useState<string>('');
+  const [notes, setNotes] = useState<Note[]>([]);
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -48,7 +59,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
           setCustomTags(JSON.parse(tagsJson));
         }
         if (notesJson) {
-          setPersonalNotesState(notesJson);
+          setNotes(JSON.parse(notesJson));
         }
         isInitialized.current = true;
       } catch (error) {
@@ -67,9 +78,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   useEffect(() => {
     if (isInitialized.current) {
-      AsyncStorage.setItem(NOTES_KEY, personalNotes);
+      AsyncStorage.setItem(NOTES_KEY, JSON.stringify(notes));
     }
-  }, [personalNotes]);
+  }, [notes]);
 
   const addTag = (tagData: Omit<CustomTag, 'id'>) => {
     const newTag: CustomTag = {
@@ -89,19 +100,42 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setCustomTags(prev => prev.filter(tag => tag.id !== id));
   };
 
-  const setPersonalNotes = (notes: string) => {
-    setPersonalNotesState(notes);
+  const addNote = (noteData: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const now = new Date().toISOString();
+    const newNote: Note = {
+      ...noteData,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setNotes(prev => [newNote, ...prev]);
+  };
+
+  const updateNote = (id: string, updates: Partial<Note>) => {
+    setNotes(prev =>
+      prev.map(note => 
+        note.id === id 
+          ? { ...note, ...updates, updatedAt: new Date().toISOString() } 
+          : note
+      )
+    );
+  };
+
+  const deleteNote = (id: string) => {
+    setNotes(prev => prev.filter(note => note.id !== id));
   };
 
   return (
     <SettingsContext.Provider
       value={{
         customTags,
-        personalNotes,
+        notes,
         addTag,
         updateTag,
         deleteTag,
-        setPersonalNotes,
+        addNote,
+        updateNote,
+        deleteNote,
       }}
     >
       {children}

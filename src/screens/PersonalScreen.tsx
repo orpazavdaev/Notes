@@ -10,9 +10,11 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  Alert,
+  Switch,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSettings, CustomTag } from '../context/SettingsContext';
+import { useSettings, CustomTag, Note } from '../context/SettingsContext';
 import { COLORS, SHADOWS } from '../constants/theme';
 
 const COLOR_OPTIONS = [
@@ -29,11 +31,25 @@ const COLOR_OPTIONS = [
 ];
 
 const PersonalScreen: React.FC = () => {
-  const { customTags, personalNotes, addTag, updateTag, deleteTag, setPersonalNotes } = useSettings();
+  const { customTags, notes, addTag, updateTag, deleteTag, addNote, updateNote, deleteNote } = useSettings();
   const [showAddTagModal, setShowAddTagModal] = useState(false);
   const [editingTag, setEditingTag] = useState<CustomTag | null>(null);
   const [newTagLabel, setNewTagLabel] = useState('');
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0]);
+
+  // Notes state
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [notePassword, setNotePassword] = useState('');
+  const [hasPassword, setHasPassword] = useState(false);
+
+  // Password unlock state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [noteToUnlock, setNoteToUnlock] = useState<Note | null>(null);
+  const [unlockedNotes, setUnlockedNotes] = useState<Set<string>>(new Set());
 
   const handleSaveTag = () => {
     if (newTagLabel.trim()) {
@@ -67,6 +83,101 @@ const PersonalScreen: React.FC = () => {
     const colorOption = COLOR_OPTIONS.find(c => c.color === tag.color) || COLOR_OPTIONS[0];
     setSelectedColor(colorOption);
     setShowAddTagModal(true);
+  };
+
+  // Notes handlers
+  const handleSaveNote = () => {
+    if (noteTitle.trim()) {
+      const noteData = {
+        title: noteTitle.trim(),
+        content: noteContent,
+        password: hasPassword && notePassword.trim() ? notePassword.trim() : undefined,
+      };
+
+      if (editingNote) {
+        updateNote(editingNote.id, noteData);
+      } else {
+        addNote(noteData);
+      }
+      resetNoteForm();
+    }
+  };
+
+  const resetNoteForm = () => {
+    setNoteTitle('');
+    setNoteContent('');
+    setNotePassword('');
+    setHasPassword(false);
+    setEditingNote(null);
+    setShowNoteModal(false);
+  };
+
+  const openEditNote = (note: Note) => {
+    // If note has password and not unlocked, show password modal
+    if (note.password && !unlockedNotes.has(note.id)) {
+      setNoteToUnlock(note);
+      setPasswordInput('');
+      setShowPasswordModal(true);
+      return;
+    }
+
+    setEditingNote(note);
+    setNoteTitle(note.title);
+    setNoteContent(note.content);
+    setNotePassword(note.password || '');
+    setHasPassword(!!note.password);
+    setShowNoteModal(true);
+  };
+
+  const openNewNote = () => {
+    setEditingNote(null);
+    setNoteTitle('');
+    setNoteContent('');
+    setNotePassword('');
+    setHasPassword(false);
+    setShowNoteModal(true);
+  };
+
+  const handleDeleteNote = (noteId: string, noteTitle: string) => {
+    Alert.alert(
+      'מחיקת הערה',
+      `האם אתה בטוח שברצונך למחוק את "${noteTitle}"?`,
+      [
+        { text: 'ביטול', style: 'cancel' },
+        { text: 'מחק', style: 'destructive', onPress: () => deleteNote(noteId) },
+      ]
+    );
+  };
+
+  const handleUnlockNote = () => {
+    if (noteToUnlock && passwordInput === noteToUnlock.password) {
+      setUnlockedNotes(prev => new Set([...prev, noteToUnlock.id]));
+      setShowPasswordModal(false);
+      // Open the note for editing
+      setEditingNote(noteToUnlock);
+      setNoteTitle(noteToUnlock.title);
+      setNoteContent(noteToUnlock.content);
+      setNotePassword(noteToUnlock.password || '');
+      setHasPassword(!!noteToUnlock.password);
+      setShowNoteModal(true);
+      setNoteToUnlock(null);
+      setPasswordInput('');
+    } else {
+      Alert.alert('שגיאה', 'סיסמה שגויה');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('he-IL', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const isNoteLocked = (note: Note) => {
+    return note.password && !unlockedNotes.has(note.id);
   };
 
   return (
@@ -109,21 +220,61 @@ const PersonalScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Personal Notes Section */}
+        {/* Notes Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>הערות אישיות</Text>
-          <View style={styles.notesContainer}>
-            <TextInput
-              style={styles.notesInput}
-              placeholder="כתבי כאן הערות אישיות..."
-              placeholderTextColor={COLORS.gray}
-              value={personalNotes}
-              onChangeText={setPersonalNotes}
-              multiline
-              textAlign="right"
-              textAlignVertical="top"
-            />
+          <View style={styles.sectionHeader}>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={openNewNote}
+            >
+              <Ionicons name="add" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>ההערות שלי</Text>
           </View>
+          
+          {notes.length === 0 ? (
+            <View style={styles.emptyNotesContainer}>
+              <Ionicons name="document-text-outline" size={48} color={COLORS.grayLight} />
+              <Text style={styles.emptyNotesText}>אין הערות עדיין</Text>
+              <Text style={styles.emptyNotesSubtext}>לחץ על + כדי להוסיף הערה חדשה</Text>
+            </View>
+          ) : (
+            <View style={styles.notesListContainer}>
+              {notes.map(note => (
+                <TouchableOpacity
+                  key={note.id}
+                  style={styles.noteCard}
+                  onPress={() => openEditNote(note)}
+                >
+                  <View style={styles.noteCardHeader}>
+                    <TouchableOpacity
+                      style={styles.deleteNoteButton}
+                      onPress={() => handleDeleteNote(note.id, note.title)}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={COLORS.gray} />
+                    </TouchableOpacity>
+                    <View style={styles.noteTitleRow}>
+                      {note.password && (
+                        <Ionicons 
+                          name={isNoteLocked(note) ? "lock-closed" : "lock-open"} 
+                          size={16} 
+                          color={COLORS.primary} 
+                          style={styles.lockIcon}
+                        />
+                      )}
+                      <Text style={styles.noteCardTitle} numberOfLines={1}>{note.title}</Text>
+                    </View>
+                  </View>
+                  {isNoteLocked(note) ? (
+                    <Text style={styles.lockedContentText}>🔒 תוכן מוגן בסיסמה</Text>
+                  ) : note.content ? (
+                    <Text style={styles.noteCardContent} numberOfLines={2}>{note.content}</Text>
+                  ) : null}
+                  <Text style={styles.noteCardDate}>{formatDate(note.updatedAt)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* App Logo Section */}
@@ -201,6 +352,171 @@ const PersonalScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Add/Edit Note Modal */}
+      <Modal visible={showNoteModal} transparent animationType="slide">
+        <View style={styles.noteModalOverlay}>
+          <View style={styles.noteModalContainer}>
+            {/* Header with gradient effect */}
+            <View style={styles.noteModalHeader}>
+              <View style={styles.noteModalHeaderTop}>
+                <TouchableOpacity 
+                  style={styles.noteHeaderButton}
+                  onPress={resetNoteForm}
+                >
+                  <Ionicons name="close" size={24} color={COLORS.gray} />
+                </TouchableOpacity>
+                <View style={styles.noteHeaderCenter}>
+                  <View style={styles.noteIconCircle}>
+                    <Ionicons 
+                      name={editingNote ? "create" : "document-text"} 
+                      size={24} 
+                      color={COLORS.white} 
+                    />
+                  </View>
+                  <Text style={styles.noteModalTitle}>
+                    {editingNote ? 'עריכת הערה' : 'הערה חדשה'}
+                  </Text>
+                </View>
+                <TouchableOpacity 
+                  style={[styles.noteSaveButton, !noteTitle.trim() && styles.noteSaveButtonDisabled]}
+                  onPress={handleSaveNote}
+                  disabled={!noteTitle.trim()}
+                >
+                  <Ionicons name="checkmark" size={24} color={COLORS.white} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <ScrollView 
+              style={styles.noteModalContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Title Card */}
+              <View style={styles.noteInputCard}>
+                <View style={styles.noteInputHeader}>
+                  <Ionicons name="text" size={18} color={COLORS.primary} />
+                  <Text style={styles.noteInputLabel}>כותרת</Text>
+                </View>
+                <TextInput
+                  style={styles.noteTitleInput}
+                  placeholder="מה שם ההערה?"
+                  placeholderTextColor={COLORS.grayLight}
+                  value={noteTitle}
+                  onChangeText={setNoteTitle}
+                  textAlign="right"
+                />
+              </View>
+
+              {/* Content Card */}
+              <View style={styles.noteInputCard}>
+                <View style={styles.noteInputHeader}>
+                  <Ionicons name="document-text" size={18} color={COLORS.primary} />
+                  <Text style={styles.noteInputLabel}>תוכן</Text>
+                </View>
+                <TextInput
+                  style={styles.noteContentInput}
+                  placeholder="כתוב את ההערה שלך כאן..."
+                  placeholderTextColor={COLORS.grayLight}
+                  value={noteContent}
+                  onChangeText={setNoteContent}
+                  textAlign="right"
+                  textAlignVertical="top"
+                  multiline
+                />
+              </View>
+
+              {/* Password Card */}
+              <View style={styles.noteInputCard}>
+                <View style={styles.passwordToggleRow}>
+                  <Switch
+                    value={hasPassword}
+                    onValueChange={(value) => {
+                      setHasPassword(value);
+                      if (!value) setNotePassword('');
+                    }}
+                    trackColor={{ false: COLORS.grayLight, true: COLORS.primaryLight }}
+                    thumbColor={hasPassword ? COLORS.primary : '#f4f4f4'}
+                  />
+                  <View style={styles.passwordLabelRow}>
+                    <View style={[styles.passwordIconCircle, hasPassword && styles.passwordIconCircleActive]}>
+                      <Ionicons 
+                        name={hasPassword ? "lock-closed" : "lock-open"} 
+                        size={16} 
+                        color={hasPassword ? COLORS.white : COLORS.gray} 
+                      />
+                    </View>
+                    <Text style={[styles.passwordLabel, hasPassword && styles.passwordLabelActive]}>
+                      הגן בסיסמה
+                    </Text>
+                  </View>
+                </View>
+
+                {hasPassword && (
+                  <View style={styles.passwordInputContainer}>
+                    <Ionicons name="key" size={18} color={COLORS.primary} style={styles.passwordInputIcon} />
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="הכנס סיסמה..."
+                      placeholderTextColor={COLORS.grayLight}
+                      value={notePassword}
+                      onChangeText={setNotePassword}
+                      textAlign="right"
+                      secureTextEntry
+                    />
+                  </View>
+                )}
+              </View>
+
+              <View style={{ height: 40 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Password Unlock Modal */}
+      <Modal visible={showPasswordModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.passwordModalContainer}>
+            <View style={styles.passwordModalHeader}>
+              <Ionicons name="lock-closed" size={40} color={COLORS.primary} />
+              <Text style={styles.passwordModalTitle}>הערה מוגנת</Text>
+              <Text style={styles.passwordModalSubtitle}>הכנס סיסמה כדי לצפות בהערה</Text>
+            </View>
+
+            <TextInput
+              style={styles.passwordModalInput}
+              placeholder="סיסמה..."
+              placeholderTextColor={COLORS.gray}
+              value={passwordInput}
+              onChangeText={setPasswordInput}
+              textAlign="right"
+              secureTextEntry
+              autoFocus
+            />
+
+            <View style={styles.passwordModalButtons}>
+              <TouchableOpacity
+                style={styles.passwordCancelButton}
+                onPress={() => {
+                  setShowPasswordModal(false);
+                  setNoteToUnlock(null);
+                  setPasswordInput('');
+                }}
+              >
+                <Text style={styles.passwordCancelText}>ביטול</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.passwordUnlockButton, !passwordInput && styles.passwordUnlockButtonDisabled]}
+                onPress={handleUnlockNote}
+                disabled={!passwordInput}
+              >
+                <Text style={styles.passwordUnlockText}>פתח</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -274,18 +590,74 @@ const styles = StyleSheet.create({
   deleteTagButton: {
     marginLeft: 4,
   },
-  notesContainer: {
+  // Notes styles
+  emptyNotesContainer: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  emptyNotesText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.gray,
+    marginTop: 12,
+  },
+  emptyNotesSubtext: {
+    fontSize: 14,
+    color: COLORS.grayLight,
+    marginTop: 4,
+  },
+  notesListContainer: {
+    gap: 12,
+  },
+  noteCard: {
     backgroundColor: COLORS.grayBg,
     borderRadius: 12,
-    marginTop: 8,
+    padding: 14,
   },
-  notesInput: {
-    padding: 16,
-    fontSize: 15,
+  noteCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  noteTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  lockIcon: {
+    marginRight: 6,
+  },
+  noteCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
     color: COLORS.black,
-    minHeight: 150,
-    lineHeight: 24,
+    textAlign: 'right',
   },
+  deleteNoteButton: {
+    padding: 4,
+  },
+  noteCardContent: {
+    fontSize: 14,
+    color: COLORS.gray,
+    textAlign: 'right',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  lockedContentText: {
+    fontSize: 14,
+    color: COLORS.gray,
+    textAlign: 'right',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  noteCardDate: {
+    fontSize: 12,
+    color: COLORS.grayLight,
+    textAlign: 'right',
+  },
+  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: COLORS.overlay,
@@ -383,14 +755,219 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.white,
   },
+  // Note modal styles
+  noteModalOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.grayBg,
+  },
+  noteModalContainer: {
+    flex: 1,
+  },
+  noteModalHeader: {
+    backgroundColor: COLORS.white,
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    ...SHADOWS.medium,
+  },
+  noteModalHeaderTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  noteHeaderButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.grayBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteHeaderCenter: {
+    alignItems: 'center',
+  },
+  noteIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  noteModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.black,
+  },
+  noteSaveButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteSaveButtonDisabled: {
+    backgroundColor: COLORS.grayLight,
+  },
+  noteModalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  noteInputCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    ...SHADOWS.small,
+  },
+  noteInputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 12,
+    gap: 8,
+  },
+  noteInputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  noteTitleInput: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.black,
+    paddingVertical: 8,
+    textAlign: 'right',
+  },
+  noteContentInput: {
+    fontSize: 16,
+    color: COLORS.black,
+    lineHeight: 24,
+    minHeight: 180,
+    textAlign: 'right',
+  },
+  // Password section styles
+  passwordToggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  passwordIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.grayBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordIconCircleActive: {
+    backgroundColor: COLORS.primary,
+  },
+  passwordLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.gray,
+  },
+  passwordLabelActive: {
+    color: COLORS.black,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.grayBg,
+    borderRadius: 12,
+    marginTop: 16,
+    paddingHorizontal: 14,
+  },
+  passwordInputIcon: {
+    marginLeft: 10,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: COLORS.black,
+    textAlign: 'right',
+  },
+  // Password modal styles
+  passwordModalContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    width: '100%',
+    maxWidth: 320,
+    padding: 24,
+  },
+  passwordModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  passwordModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.black,
+    marginTop: 12,
+  },
+  passwordModalSubtitle: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
+  passwordModalInput: {
+    backgroundColor: COLORS.grayBg,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+    color: COLORS.black,
+  },
+  passwordModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  passwordCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.grayBg,
+    alignItems: 'center',
+  },
+  passwordCancelText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: COLORS.gray,
+  },
+  passwordUnlockButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+  },
+  passwordUnlockButtonDisabled: {
+    backgroundColor: '#FFDAB3',
+  },
+  passwordUnlockText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
   logoSection: {
     alignItems: 'center',
     paddingVertical: 30,
     marginBottom: 20,
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 150,
+    height: 150,
     marginBottom: 16,
   },
   appName: {
@@ -406,6 +983,3 @@ const styles = StyleSheet.create({
 });
 
 export default PersonalScreen;
-
-
-
