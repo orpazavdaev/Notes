@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   saveButtonDisabled: {
-    backgroundColor: '#A8DCDC',
+    backgroundColor: '#FFC4C4',
   },
   saveButtonText: {
     fontSize: 15,

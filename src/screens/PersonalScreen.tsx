@@ -18,13 +18,13 @@ import { useSettings, CustomTag, Note } from '../context/SettingsContext';
 import { COLORS, SHADOWS } from '../constants/theme';
 
 const COLOR_OPTIONS = [
-  { color: '#018790', bgColor: '#E0F7F7' },
-  { color: '#005461', bgColor: '#E0F0F2' },
+  { color: '#EE6983', bgColor: '#FFC4C4' },
+  { color: '#850E35', bgColor: '#FFDEDE' },
   { color: '#4A90D9', bgColor: '#E3F2FD' },
-  { color: '#DB7093', bgColor: '#FFE4EC' },
-  { color: '#00B7B5', bgColor: '#E0FFFF' },
   { color: '#9370DB', bgColor: '#F3E8FF' },
   { color: '#2E8B57', bgColor: '#E0F5E9' },
+  { color: '#E07850', bgColor: '#FFEEE8' },
+  { color: '#20B2AA', bgColor: '#E0FFFF' },
   { color: '#CD5C5C', bgColor: '#FFE4E1' },
   { color: '#6B8E23', bgColor: '#F5FFFA' },
   { color: '#708090', bgColor: '#F0F8FF' },
@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   saveButtonDisabled: {
-    backgroundColor: '#A8DCDC',
+    backgroundColor: '#FFC4C4',
   },
   saveButtonText: {
     fontSize: 15,
@@ -953,7 +953,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   passwordUnlockButtonDisabled: {
-    backgroundColor: '#A8DCDC',
+    backgroundColor: '#FFC4C4',
   },
   passwordUnlockText: {
     fontSize: 16,
