@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   saveButtonDisabled: {
-    backgroundColor: '#FFDAB3',
+    backgroundColor: '#A8DCDC',
   },
   saveButtonText: {
     fontSize: 15,

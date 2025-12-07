@@ -32,7 +32,7 @@ const TAGS_KEY = '@custom_tags';
 const NOTES_KEY = '@user_notes';
 
 const defaultTags: CustomTag[] = [
-  { id: '1', label: 'אישי', color: '#B8860B', bgColor: '#FFF8DC' },
+  { id: '1', label: 'אישי', color: '#018790', bgColor: '#E0F7F7' },
   { id: '2', label: 'נופש', color: '#2E8B57', bgColor: '#E0F5E9' },
   { id: '3', label: 'עבודה', color: '#4A90D9', bgColor: '#E3F2FD' },
   { id: '4', label: 'בריאות', color: '#DB7093', bgColor: '#FFE4EC' },
