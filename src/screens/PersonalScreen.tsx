@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSettings, CustomTag } from '../context/SettingsContext';
@@ -123,6 +124,17 @@ const PersonalScreen: React.FC = () => {
               textAlignVertical="top"
             />
           </View>
+        </View>
+
+        {/* App Logo Section */}
+        <View style={styles.logoSection}>
+          <Image 
+            source={require('../../assets/my-logo-trimmed.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>המשימות שלי</Text>
+          <Text style={styles.version}>גרסה 1.0.0</Text>
         </View>
       </ScrollView>
 
@@ -370,6 +382,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.white,
+  },
+  logoSection: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    marginBottom: 20,
+  },
+  logo: {
+    width: 50,
+    height: 50,
+    marginBottom: 16,
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.black,
+    marginBottom: 4,
+  },
+  version: {
+    fontSize: 13,
+    color: COLORS.gray,
   },
 });
 
