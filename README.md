@@ -143,11 +143,3 @@ export const COLORS = {
   // ...
 };
 ```
-
-## 📝 רישיון
-
-MIT License
-
----
-
-נבנה עם ❤️ באמצעות React Native ו-Expo
