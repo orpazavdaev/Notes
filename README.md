@@ -10,7 +10,7 @@
 
 **A beautifully designed, fully functional task management application built with React Native & Expo**
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Architecture](#-architecture) • [Screenshots](#-screenshots) • [Installation](#-installation)
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Architecture](#-architecture) • [Installation](#-installation)
 
 ---
 
@@ -101,20 +101,6 @@ src/
 - **Container/Presentational** - Separation of logic and UI
 - **Custom Hooks** - Reusable stateful logic
 - **Single Responsibility** - Each component has one purpose
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-| Home Screen | Calendar View | Add Task |
-|:-----------:|:-------------:|:--------:|
-| ![Home](assets/screenshots/home.png) | ![Calendar](assets/screenshots/calendar.png) | ![Add](assets/screenshots/add-task.png) |
-
-</div>
-
-> 💡 *Screenshots coming soon - app is fully functional*
 
 ---
 
@@ -213,20 +199,8 @@ Building this project enhanced my skills in:
 
 ---
 
-## 📫 Contact
-
-**Looking for a dedicated mobile developer?** I'm open to new opportunities!
-
-- 📧 Email: [your.email@example.com](mailto:your.email@example.com)
-- 💼 LinkedIn: [Your LinkedIn](https://linkedin.com/in/your-profile)
-- 🐙 GitHub: [Your GitHub](https://github.com/your-username)
-
----
-
 <div align="center">
 
 ### ⭐ If you found this project interesting, please consider giving it a star!
-
-Made with ❤️ and ☕
 
 </div>
